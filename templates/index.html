@@ -7,21 +7,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-       body {
-    /* Combines the gradient overlay and the image in one line */
-    background: linear-gradient(to bottom, rgba(31, 28, 44, 0.8), rgba(146, 141, 171, 0.8)), url('/static/images/background.jpg');
-    
-    /* Other properties for the image */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed; /* This is important for a fixed image */
-    
-    font-family: 'Poppins', sans-serif;
-    transition: background 0.5s ease-in-out;
-}
+        body {
+            background: linear-gradient(to bottom, rgba(31, 28, 44, 0.8), rgba(146, 141, 171, 0.8)), url('/static/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            font-family: 'Poppins', sans-serif;
+            transition: background 0.5s ease-in-out;
+        }
         .message-box {
             max-height: 70vh;
             overflow-y: auto;
@@ -55,37 +52,52 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1.0); }
         }
-        /* Glassmorphism scrollbar */
         .message-box::-webkit-scrollbar {
             width: 8px;
         }
         .message-box::-webkit-scrollbar-thumb {
-            background-color: rgba(147, 197, 253, 0.5); /* Blue thumb with transparency */
+            background-color: rgba(147, 197, 253, 0.5);
             border-radius: 4px;
         }
         .message-box::-webkit-scrollbar-track {
             background-color: transparent;
         }
-        /* Custom scrollbar for Firefox */
         .message-box {
             scrollbar-color: rgba(147, 197, 253, 0.5) transparent;
             scrollbar-width: thin;
+        }
+        .h1-stylish-font {
+            font-family: 'Anton', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .message-content h1, .message-content h2, .message-content h3 {
+            font-weight: 600;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+        }
+        .message-content p {
+            margin-bottom: 1em;
+        }
+        .message-content ul, .message-content ol {
+            margin-bottom: 1em;
+            padding-left: 2em;
+        }
+        .message-content ul li, .message-content ol li {
+            margin-bottom: 0.5em;
         }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
     <div class="rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col h-[80vh] border border-gray-700 backdrop-filter backdrop-blur-xl bg-gray-900 bg-opacity-30">
-        <h1 class="text-3xl font-bold text-white mb-6 text-center tracking-wide">hsraH</h1>
-        <div id="chat-box" class="message-box flex-grow border-b border-gray-700 pb-4">
-            <div class="flex items-start mb-4">
-                <div class="bg-gray-700 text-gray-200 p-3 rounded-xl max-w-xs message-fade-in">
-                    <p>Hello! How can I help you today?</p>
-                    <span class="text-xs text-gray-400 block text-right mt-1">
-                        <span id="timestamp-initial-bot"></span>
-                    </span>
-                </div>
-            </div>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-white tracking-wide h1-stylish-font">hsraH</h1>
+            <button id="clear-chat-btn" class="text-sm text-gray-400 hover:text-white transition-colors">
+                Clear Chat
+            </button>
         </div>
+        <div id="chat-box" class="message-box flex-grow border-b border-gray-700 pb-4">
+            </div>
         <div class="mt-6">
             <form id="chat-form" class="flex items-center space-x-2">
                 <input type="text" id="user-input" class="flex-grow border border-gray-700 bg-gray-800 text-white rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all" placeholder="Type your message...">
@@ -101,26 +113,36 @@
         const chatForm = document.getElementById("chat-form");
         const userInput = document.getElementById("user-input");
         const chatBox = document.getElementById("chat-box");
+        const clearChatBtn = document.getElementById("clear-chat-btn");
         
         let conversation = [];
 
         function loadChatHistory() {
             const storedConversation = localStorage.getItem("chatbot_conversation");
-            if (storedConversation) {
+            if (storedConversation && storedConversation !== '[]') {
                 conversation = JSON.parse(storedConversation);
                 chatBox.innerHTML = "";
                 conversation.forEach(message => {
                     appendMessage(message.sender, message.text, message.timestamp);
                 });
             } else {
+                conversation = [];
+                chatBox.innerHTML = "";
                 const initialTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                conversation.push({ sender: 'bot', text: 'Hello! How can I help you today?', timestamp: initialTimestamp });
+                const initialMessage = { sender: 'bot', text: 'Hello! How can I help you today?', timestamp: initialTimestamp };
+                conversation.push(initialMessage);
                 saveChatHistory();
+                appendMessage(initialMessage.sender, initialMessage.text, initialMessage.timestamp);
             }
         }
         
         function saveChatHistory() {
             localStorage.setItem("chatbot_conversation", JSON.stringify(conversation));
+        }
+        
+        function clearChatHistory() {
+            localStorage.removeItem("chatbot_conversation");
+            location.reload();
         }
 
         chatForm.addEventListener("submit", function(event) {
@@ -159,6 +181,8 @@
             });
         });
 
+        clearChatBtn.addEventListener("click", clearChatHistory);
+
         function appendMessage(sender, message, timestamp, isTyping = false) {
             const messageElement = document.createElement("div");
             messageElement.className = `flex mb-4 message-fade-in ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
@@ -172,9 +196,10 @@
                     </div>
                 `;
             } else {
+                const formattedMessage = sender === 'bot' ? marked.parse(message) : message;
                 messageElement.innerHTML = `
-                    <div class="${sender === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'} p-3 rounded-xl max-w-xs">
-                        <p>${message}</p>
+                    <div class="${sender === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'} p-3 rounded-xl max-w-xs message-content">
+                        ${formattedMessage}
                         <span class="text-xs ${sender === 'user' ? 'text-blue-200' : 'text-gray-400'} block text-right mt-1">${timestamp}</span>
                     </div>
                 `;
